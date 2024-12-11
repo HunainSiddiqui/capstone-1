@@ -9,6 +9,7 @@ import { lawyerRouter } from './router/lawyer';
 import { resetPasswordRouter } from './router/reset-password';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { chatRouter } from './router/chat';
 
 
 const app = express();
@@ -33,27 +34,50 @@ const io = new Server(httpServer, {
     }
 });
 
-io.on('connection', (socket) => {
-    console.log('A user connected:', socket.id);
+app.use("/api/v1/chat", chatRouter(io)); // Pass io to routes here
 
-    socket.on('join room', (roomId) => {
-        socket.join(roomId);
-        console.log(`${socket.id} joined room: ${roomId}`);
+io.on("connection", (socket) => {
+    console.log("Connected to socket.io");
+    socket.on("setup", (userData) => {
+      socket.join(userData.id);
+      socket.emit("connected");
     });
+  
+    socket.on("join chat", (room) => {
+      socket.join(room);
+      console.log("User Joined Room: " + room);
+    });
+   
+  
+    socket.on("new message", (newMessageRecieved) => {
+      var chat = newMessageRecieved.chat;
+  
+      if (!chat.user2Id && chat.user2Id != newMessageRecieved.senderId) return console.log("chat user 2 not defined");
+      if (!chat.user1Id && chat.user1Id != newMessageRecieved.senderId) return console.log("chat user 1 not defined");
 
-    socket.on('message', (data) => {
-        const { roomId, content } = data;
-        io.to(roomId).emit('message', {
-            content,
-            from: socket.id,
-        }); // Broadcast message to the room
+      if(chat.user1Id != newMessageRecieved.senderId)
+      {
+        socket.in(chat.user1Id).emit("message recieved", newMessageRecieved);
+      }
+      if(chat.user2Id != newMessageRecieved.senderId)
+      {
+        socket.in(chat.user2Id).emit("message recieved", newMessageRecieved);
+      }
+  
+      if (!chat.user1Id && chat.user1Id != newMessageRecieved.senderId) return console.log("chat user 2 not defined");
+      
+      });
+  
+      
+   
+  
+    socket.off("setup", () => {
+      console.log("USER DISCONNECTED");
+      //@ts-ignore
+      socket.leave(userData.id);
     });
-
-    socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
-    });
-});
+  });
 
 httpServer.listen(3000, () => {
-    console.log('Server is running on port 3000');
+  console.log("Server is running on port 3000");
 });

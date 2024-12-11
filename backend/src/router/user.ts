@@ -92,6 +92,7 @@ router.get("/me", authMiddleware, async (req: Request, res: Response) => {
       fullname: true,
       email: true,
       role: true,
+      id: true,
       
       // @ts-ignore
       isformfilled: true,

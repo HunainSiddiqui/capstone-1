@@ -88,6 +88,7 @@ router.get("/me", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, v
             fullname: true,
             email: true,
             role: true,
+            id: true,
             // @ts-ignore
             isformfilled: true,
         },

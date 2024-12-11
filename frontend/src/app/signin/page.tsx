@@ -36,6 +36,9 @@ export default function Login() {
             Authorization: `Bearer ${token}`,
           },
         });
+
+        //store user in local storage
+        localStorage.setItem("user", JSON.stringify(response.data.user));
        
         document.cookie = `role=${response.data.user.role}; path=/`;
 

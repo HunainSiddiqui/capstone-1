@@ -14,6 +14,7 @@ const lawyer_1 = require("./router/lawyer");
 const reset_password_1 = require("./router/reset-password");
 const http_1 = require("http");
 const socket_io_1 = require("socket.io");
+const chat_1 = require("./router/chat");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use(cookieParser());
@@ -32,23 +33,38 @@ const io = new socket_io_1.Server(httpServer, {
         origin: '*',
     }
 });
-io.on('connection', (socket) => {
-    console.log('A user connected:', socket.id);
-    socket.on('join room', (roomId) => {
-        socket.join(roomId);
-        console.log(`${socket.id} joined room: ${roomId}`);
+app.use("/api/v1/chat", (0, chat_1.chatRouter)(io)); // Pass io to routes here
+io.on("connection", (socket) => {
+    console.log("Connected to socket.io");
+    socket.on("setup", (userData) => {
+        socket.join(userData.id);
+        socket.emit("connected");
     });
-    socket.on('message', (data) => {
-        const { roomId, content } = data;
-        io.to(roomId).emit('message', {
-            content,
-            from: socket.id,
-        }); // Broadcast message to the room
+    socket.on("join chat", (room) => {
+        socket.join(room);
+        console.log("User Joined Room: " + room);
     });
-    socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
+    socket.on("new message", (newMessageRecieved) => {
+        var chat = newMessageRecieved.chat;
+        if (!chat.user2Id && chat.user2Id != newMessageRecieved.senderId)
+            return console.log("chat user 2 not defined");
+        if (!chat.user1Id && chat.user1Id != newMessageRecieved.senderId)
+            return console.log("chat user 1 not defined");
+        if (chat.user1Id != newMessageRecieved.senderId) {
+            socket.in(chat.user1Id).emit("message recieved", newMessageRecieved);
+        }
+        if (chat.user2Id != newMessageRecieved.senderId) {
+            socket.in(chat.user2Id).emit("message recieved", newMessageRecieved);
+        }
+        if (!chat.user1Id && chat.user1Id != newMessageRecieved.senderId)
+            return console.log("chat user 2 not defined");
+    });
+    socket.off("setup", () => {
+        console.log("USER DISCONNECTED");
+        //@ts-ignore
+        socket.leave(userData.id);
     });
 });
 httpServer.listen(3000, () => {
-    console.log('Server is running on port 3000');
+    console.log("Server is running on port 3000");
 });
