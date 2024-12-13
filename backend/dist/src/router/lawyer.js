@@ -109,4 +109,20 @@ router.get("/me", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, v
         });
     }
 }));
+//feach all lawyers
+router.get("/all", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const lawyers = yield db_1.prismaClient.lawyer.findMany();
+        return res.status(200).json({
+            message: "Lawyers data fetched successfully.",
+            lawyers,
+        });
+    }
+    catch (error) {
+        console.error("Error fetching lawyers data:", error.message, error.stack);
+        return res.status(500).json({
+            message: "An error occurred while fetching lawyers data.",
+        });
+    }
+}));
 exports.lawyerRouter = router;

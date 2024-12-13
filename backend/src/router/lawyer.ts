@@ -130,4 +130,29 @@ router.get(
 );
 
 
+//feach all lawyers
+
+router.get(
+  "/all",
+  async (req: Request, res: Response) => {
+    try {
+      const lawyers = await prismaClient.lawyer.findMany();
+      return res.status(200).json({
+        message: "Lawyers data fetched successfully.",
+        lawyers,
+      });
+    } catch (error: any) {
+      console.error(
+        "Error fetching lawyers data:",
+        error.message,
+        error.stack
+      );
+      return res.status(500).json({
+        message: "An error occurred while fetching lawyers data.",
+      });
+    }
+  }
+);
+
+
 export const lawyerRouter = router;
